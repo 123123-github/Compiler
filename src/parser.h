@@ -8,7 +8,7 @@ public:
 	void program();
 private:
 	Lexer lex;
-	Token look;
+	Tag look;
 private:
 	void move();
 	bool match(Tag t);
@@ -22,10 +22,12 @@ private:
 	void proc();
 	void body();
 	void statement();
+	
 	void lexp();
 	void exp();
 	void term();
 	void factor();
+	
 	void aop();
 	void mop();
 	void lop();
@@ -33,6 +35,4 @@ private:
 	bool is_mop(Tag t);
 	bool is_lop(Tag t);
 	bool is_exp(Tag t);
-private:
-	void print_msg(std::string s);
 };

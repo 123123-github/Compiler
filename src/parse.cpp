@@ -4,7 +4,7 @@
 #include <map>
 #include <set>
 #include <vector>
-#include "tokens.h"
+#include "tag.h"
 #include "lexer.h"
 #include "parser.h"
 
@@ -13,7 +13,7 @@ extern bool follow[50][50];
 Parser::Parser(Lexer l)
 {
 	lex = l;
-	look = (Token)lex.nextToken();
+	look = (Tag)lex.nextToken();
 }
 
 Parser::~Parser()
@@ -30,12 +30,11 @@ void Parser::program()
 
 inline void Parser::move()
 {
-	while ((look = (Token)lex.nextToken()) == ERROR);
+	while ((look = (Tag)lex.nextToken()) == ERROR);
 }
 
 inline bool Parser::match(Tag t)
 {
-	printf("%d ", (int)t);
 	if (look == t) move();
 	else 
 	{
@@ -59,14 +58,12 @@ void Parser::get_error()
 
 void Parser::prog()
 {
-	print_msg("prog");
 	match(PROGRAM); match(ID); match(SEMICOLON);
 	block();
 }
 
 void Parser::block()
 {
-	print_msg("block");
 	if (look == CONST)	condecl();
 	if (look == VAR)	vardecl();
 	if (look == PROCEDURE)	proc();
@@ -75,7 +72,6 @@ void Parser::block()
 
 void Parser::condecl()
 {
-	print_msg("condecl");
 	match(CONST);
 	constexp();
 	while (look == COMMA) { move();
@@ -86,13 +82,11 @@ void Parser::condecl()
 
 void Parser::constexp()
 {
-	print_msg("constexp");
 	match(ID); match(ASSIGN); match(NUM);
 }
 
 void Parser::vardecl()
 {
-	print_msg("vardecl");
 	match(VAR); match(ID);
 	while (look == COMMA) { move();
 		match(ID);
@@ -102,8 +96,6 @@ void Parser::vardecl()
 
 void Parser::proc()
 {
-	print_msg("proc");
-
 	match(PROCEDURE); match(ID); match(LPAR);
 	if (look == ID) { move();
 		while (look == COMMA) { move();
@@ -119,8 +111,6 @@ void Parser::proc()
 
 void Parser::body()
 {
-	print_msg("body");
-
 	match(BEGIN);
 	statement();
 	while (look == SEMICOLON) { move();
@@ -131,20 +121,27 @@ void Parser::body()
 
 void Parser::statement()
 {
-	print_msg("statement");
-
 	switch (look) {
 	case ID: move();
 		match(ASSIGN); exp();
+
+
+
 		break;
 	case IF: move();
 		lexp(); match(THEN); statement();
 		if (look == ELSE) { move();
 			statement();
 		}
+
+
+
 		break;
 	case WHILE: move();
 		lexp(); match(DO); statement();
+
+
+
 		break;
 	case CALL: move();
 		match(ID); match(LPAR);
@@ -154,9 +151,15 @@ void Parser::statement()
 			}
 		}
 		match(RPAR);
+
+
+
 		break;
 	case BEGIN:
 		body();
+
+
+
 		break;
 	case READ: move();
 		match(LPAR);
@@ -165,6 +168,8 @@ void Parser::statement()
 			match(ID);
 		}
 		match(RPAR);
+
+
 		break;
 	case WRITE: move();
 		match(LPAR);
@@ -173,6 +178,7 @@ void Parser::statement()
 			exp();
 		}
 		match(RPAR);
+
 		break;
 	default:
 		;
@@ -182,8 +188,6 @@ void Parser::statement()
 
 void Parser::lexp()
 {
-	print_msg("lexp");
-
 	switch (look) {
 	case ODD: move();
 		exp();
@@ -202,8 +206,6 @@ void Parser::lexp()
 
 void Parser::exp()
 {
-	print_msg("exp");
-
 	if (is_aop(look)) { move(); }
 	term();
 	while (is_aop(look)) { move();
@@ -213,8 +215,6 @@ void Parser::exp()
 
 void Parser::term()
 {
-	print_msg("term");
-
 	factor();
 	while (is_mop(look)) { move();
 		factor();
@@ -223,8 +223,6 @@ void Parser::term()
 
 void Parser::factor()
 {
-	print_msg("factor");
-
 	switch (look) {
 	case ID: move();
 		break;
@@ -241,24 +239,18 @@ void Parser::factor()
 
 inline void Parser::lop()
 {
-	print_msg("lop");
-
 	if (is_lop(look)) move();
 	else ;
 }
 
 inline void Parser::aop()
 {
-	print_msg("aop");
-
 	if (is_aop(look)) move();
 	else ;
 }
 
 inline void Parser::mop()
 {
-	print_msg("mop");
-
 	if (is_mop(look)) move();
 	else ;
 }
@@ -271,11 +263,6 @@ inline bool Parser::is_lop(Tag t)
 bool Parser::is_exp(Tag t)
 {
 	return is_aop(t) || t == ID || t == NUM || t == LPAR;
-}
-
-void Parser::print_msg(std::string s)
-{
-	printf("%s\n", s.c_str());
 }
 
 inline bool Parser::is_aop(Tag t)

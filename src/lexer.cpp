@@ -3,7 +3,7 @@
 #include <string>
 #include <cstring>
 #include "lexer.h"
-#include "tokens.h"
+#include "tag.h"
 using std::string;
 
 // constructor & destructor
@@ -94,8 +94,12 @@ inline void Lexer::get_token(int v)
 inline void Lexer::get_token(const string& s)
 {
 	tokenWord = s;
-	if (!words.count(s)) add_word(token = ID, s);
-	else token =  words[s];
+	if (!words.count(s)) {
+		add_word(token = ID, s);		// is reserve word
+	}
+	else {
+		token = words[s];								// isn't 
+	}
 }
 
 inline void Lexer::get_error()

@@ -1,6 +1,7 @@
 #pragma once
 
 enum Tag{
+	// lexer read
 	ERROR = 0,
 	PROGRAM, 
 	CONST, ASSIGN, VAR, PROCEDURE,
@@ -15,5 +16,9 @@ enum Tag{
 	ID, NUM,
 	COMMA, SEMICOLON,		// , ;
 	LPAR, RPAR,				// ( )
+	
+	// symbol table
+	VAR_TYPE = 256,
+	CONST_TYPE,
+	PROC_TYPE,
 };
-typedef Tag Token;
