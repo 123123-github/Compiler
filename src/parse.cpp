@@ -28,6 +28,11 @@ void Parser::program()
 	}
 }
 
+inline void Parser::move()
+{
+	while ((look = (Token)lex.nextToken()) == ERROR);
+}
+
 inline bool Parser::match(Tag t)
 {
 	printf("%d ", (int)t);
@@ -43,11 +48,6 @@ inline bool Parser::match(Tag t)
 	return true;
 }
 
-inline void Parser::move()
-{
-	while ((look = (Token)lex.nextToken()) == ERROR);
-}
-
 void Parser::get_error()
 {
 	fprintf(stderr, "Line:%3d, Col:%3d: syntax error! \n", lex.get_line(), lex.get_col());
@@ -60,9 +60,7 @@ void Parser::get_error()
 void Parser::prog()
 {
 	print_msg("prog");
-	match(PROGRAM);
-	match(ID);
-	match(SEMICOLON);
+	match(PROGRAM); match(ID); match(SEMICOLON);
 	block();
 }
 
@@ -80,8 +78,7 @@ void Parser::condecl()
 	print_msg("condecl");
 	match(CONST);
 	constexp();
-	while (look == COMMA) {
-		move();
+	while (look == COMMA) { move();
 		constexp();
 	}
 	match(SEMICOLON);
@@ -96,10 +93,8 @@ void Parser::constexp()
 void Parser::vardecl()
 {
 	print_msg("vardecl");
-	match(VAR);
-	match(ID);
-	while (look == COMMA) {
-		move();
+	match(VAR); match(ID);
+	while (look == COMMA) { move();
 		match(ID);
 	}
 	match(SEMICOLON);
@@ -109,20 +104,15 @@ void Parser::proc()
 {
 	print_msg("proc");
 
-	match(PROCEDURE); match(ID);
-	match(LPAR);
-	if (look == ID) {
-		move();
-		while (look == COMMA) {
-			move();
+	match(PROCEDURE); match(ID); match(LPAR);
+	if (look == ID) { move();
+		while (look == COMMA) { move();
 			match(ID);
 		}
 	}
-	match(RPAR);
-	match(SEMICOLON);
+	match(RPAR); match(SEMICOLON);
 	block();
-	while (look == SEMICOLON) {
-		move();
+	while (look == SEMICOLON) { move();
 		proc();
 	}
 }
@@ -133,8 +123,7 @@ void Parser::body()
 
 	match(BEGIN);
 	statement();
-	while (look == SEMICOLON) {
-		move();
+	while (look == SEMICOLON) { move();
 		statement();
 	}
 	match(END);
@@ -151,7 +140,7 @@ void Parser::statement()
 	case IF: move();
 		lexp(); match(THEN); statement();
 		if (look == ELSE) { move();
-			statement();	
+			statement();
 		}
 		break;
 	case WHILE: move();

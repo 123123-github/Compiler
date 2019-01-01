@@ -10,8 +10,8 @@ private:
 	Lexer lex;
 	Token look;
 private:
-	bool match(Tag t);
 	void move();
+	bool match(Tag t);
 	void get_error();
 private:
 	void prog();
