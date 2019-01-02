@@ -8,6 +8,7 @@
 #include "lexer.h"
 #include "parser.h"
 #include "token.h"
+#include "env.h"
 
 extern bool follow[50][50];
 
@@ -24,6 +25,7 @@ Parser::~Parser()
 void Parser::program()
 {
 	prog();
+	
 	if (lex.token.tag != OVER) {
 		get_error();
 	}
@@ -59,15 +61,21 @@ void Parser::get_error()
 
 void Parser::prog()
 {
-	match(PROGRAM); match(ID); match(SEMICOLON);
+	Token temp;
+	match(PROGRAM); temp = lex.token; match(ID); match(SEMICOLON);
+	
+	table_list.enter_proc(temp.lexeme);	// new symbol table
 	block();
+	table_list.leave_proc();	// goback symbol table
 }
 
 void Parser::block()
 {
 	if (look == CONST)	condecl();
 	if (look == VAR)	vardecl();
-	if (look == PROCEDURE)	proc();
+	if (look == PROCEDURE) {
+		proc();
+	}
 	body();
 }
 
@@ -83,31 +91,50 @@ void Parser::condecl()
 
 void Parser::constexp()
 {
-	match(ID); match(ASSIGN); match(NUM);
+	Token temp1, temp2;
+	temp1 = lex.token; match(ID); match(ASSIGN); temp2 = lex.token; match(NUM);
+	// --- add to symbol table ---
+	table_list.cur_proc()->put(Tag::CONST_TYPE, temp1.lexeme, temp2.value);
 }
 
 void Parser::vardecl()
 {
-	match(VAR); match(ID);
+	Token temp;
+	match(VAR); temp = lex.token; match(ID);
+	// --- add to symbol table ---
+	table_list.cur_proc()->put(Tag::VAR_TYPE, temp.lexeme);
+
 	while (look == COMMA) { move();
-		match(ID);
+		temp = lex.token; match(ID);
+		// --- add to symbol table ---
+		table_list.cur_proc()->put(Tag::VAR_TYPE, temp.lexeme);
 	}
 	match(SEMICOLON);
 }
 
 void Parser::proc()
 {
-	match(PROCEDURE); match(ID); match(LPAR);
-	if (look == ID) { move();
+	Token temp; int paraN = 0;
+	
+	match(PROCEDURE); temp = lex.token; match(ID); match(LPAR);
+	table_list.enter_proc(temp.lexeme);	// new symbol table
+	
+	if (look == ID) { move(); paraN++;
 		while (look == COMMA) { move();
-			match(ID);
+			match(ID); paraN++;
 		}
 	}
 	match(RPAR); match(SEMICOLON);
+	
 	block();
 	while (look == SEMICOLON) { move();
 		proc();
 	}
+
+	void* next_pos = table_list.cur_proc();
+	table_list.leave_proc();	// goback symbol table
+	// --- add to symbol ---
+	table_list.cur_proc()->put(Tag::PROC_TYPE, temp.lexeme, paraN, next_pos);
 }
 
 void Parser::body()

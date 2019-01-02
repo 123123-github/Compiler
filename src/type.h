@@ -5,9 +5,9 @@
 class Type
 {
 public:
-	Type();
-	Type(Tag t, int width, int offset, int value, void* nextv);
-	~Type();
+	Type() {};
+	~Type() {};
+	Type(Tag t, int width, int offset, int value, void* nextv) : type(t), width(width), offset(offset), value(value), nextv(nextv) {}
 
 private:
 	Tag type;	// CONST, VAR, PARA, PROC
@@ -16,19 +16,3 @@ private:
 	int value;
 	void* nextv;
 };
-
-Type::Type()
-{
-}
-
-inline Type::Type(Tag tag, int width, int offset, int value, void * nextv)
-{
-	this->width = width;
-	this->offset = offset;
-	this->value = value;
-	this->nextv = nextv;
-}
-
-Type::~Type()
-{
-}

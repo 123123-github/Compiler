@@ -1,4 +1,5 @@
 #pragma once
+#include "env.h"
 
 class Parser
 {
@@ -9,6 +10,8 @@ public:
 private:
 	Lexer lex;
 	Tag look;
+	EnvList table_list;	// symbol table list
+	int offset_used;
 private:
 	void move();
 	bool match(Tag t);
@@ -22,12 +25,10 @@ private:
 	void proc();
 	void body();
 	void statement();
-	
 	void lexp();
 	void exp();
 	void term();
 	void factor();
-	
 	void aop();
 	void mop();
 	void lop();
