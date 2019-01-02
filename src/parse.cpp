@@ -94,7 +94,7 @@ void Parser::constexp()
 	Token temp1, temp2;
 	temp1 = lex.token; match(ID); match(ASSIGN); temp2 = lex.token; match(NUM);
 	// --- add to symbol table ---
-	table_list.cur_proc()->put(Tag::CONST_TYPE, temp1.lexeme, temp2.value);
+	table_list.save(Tag::CONST_TYPE, temp1.lexeme, temp2.value);
 }
 
 void Parser::vardecl()
@@ -102,12 +102,12 @@ void Parser::vardecl()
 	Token temp;
 	match(VAR); temp = lex.token; match(ID);
 	// --- add to symbol table ---
-	table_list.cur_proc()->put(Tag::VAR_TYPE, temp.lexeme);
+	table_list.save(Tag::VAR_TYPE, temp.lexeme);
 
 	while (look == COMMA) { move();
 		temp = lex.token; match(ID);
 		// --- add to symbol table ---
-		table_list.cur_proc()->put(Tag::VAR_TYPE, temp.lexeme);
+		table_list.save(Tag::VAR_TYPE, temp.lexeme);
 	}
 	match(SEMICOLON);
 }
@@ -134,7 +134,8 @@ void Parser::proc()
 	void* next_pos = table_list.cur_proc();
 	table_list.leave_proc();	// goback symbol table
 	// --- add to symbol ---
-	table_list.cur_proc()->put(Tag::PROC_TYPE, temp.lexeme, paraN, next_pos);
+	table_list.save(Tag::PROC_TYPE, temp.lexeme, paraN, next_pos);
+	// table_list.cur_proc()->put(Tag::PROC_TYPE, temp.lexeme, paraN, next_pos);
 }
 
 void Parser::body()
