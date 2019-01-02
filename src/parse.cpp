@@ -7,13 +7,14 @@
 #include "tag.h"
 #include "lexer.h"
 #include "parser.h"
+#include "token.h"
 
 extern bool follow[50][50];
 
 Parser::Parser(Lexer l)
 {
 	lex = l;
-	look = (Tag)lex.nextToken();
+	look = (Tag)lex.nextToken().tag;
 }
 
 Parser::~Parser()
@@ -23,14 +24,14 @@ Parser::~Parser()
 void Parser::program()
 {
 	prog();
-	if (lex.token != EOF) {
+	if (lex.token.tag != OVER) {
 		get_error();
 	}
 }
 
 inline void Parser::move()
 {
-	while ((look = (Tag)lex.nextToken()) == ERROR);
+	while ((look = (Tag)lex.nextToken().tag) == ERROR);
 }
 
 inline bool Parser::match(Tag t)
@@ -50,7 +51,7 @@ inline bool Parser::match(Tag t)
 void Parser::get_error()
 {
 	fprintf(stderr, "Line:%3d, Col:%3d: syntax error! \n", lex.get_line(), lex.get_col());
-	if (lex.token == EOF) {
+	if (lex.token.tag == OVER) {
 		fprintf(stderr, "File END! \n");
 		//exit(1);
 	}

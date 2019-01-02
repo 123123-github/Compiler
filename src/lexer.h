@@ -1,3 +1,4 @@
+#include "token.h"
 class Lexer
 {
 public:
@@ -5,10 +6,8 @@ public:
 	~Lexer();
 
 public:
-	int token;
-	int tokenValue;
-	std::string tokenWord;
-	int nextToken();
+	Token token;
+	Token nextToken();
 	int get_line();
 	int get_col();		// file pos
 
@@ -28,3 +27,6 @@ private:
 	void add_word(int type, const std::string& s);
 };
 
+//int token;
+//int tokenValue;
+//std::string tokenWord;

@@ -9,7 +9,10 @@ using namespace std;
 
 // code structure & CODE MEM
 string op; int L, A;
-struct Code { string op; int L, A; };
+struct Code {
+	string op; int L, A; 
+	Code(string op = "", int L = 0, int A = 0) :op(op), L(L), A(A) {};
+};
 vector<Code> code;
 
 // STACK MEM
@@ -20,111 +23,137 @@ int stack[maxn];
 int IP, SP, PC, TP;
 
 // other...
-enum Tag { 
+int paraN, display, base, value;
+enum Tag {
 	// opr type
-	RET, NOT, ADD, SUB, MUL, DIV, ODD, NUL, 
-	EQ , NE , LT , GE , GT , LE , WRT, EDL, RED,
-	
+	RET, NOT, ADD, SUB, MUL, DIV, ODD, NUL,
+	EQ, NE, LT, GE, GT, LE, WRT, EDL, RED,
 	// instr type
-	INT, CAL, LIT, LOD, STO, JMP, JPC, OPR,
+	INT, CAL, LIT, LOD, STO, JMP, JPC, OPR, PAR,
 };
 map<string, int> h;
+
 
 void load_code()
 {
 	ifstream infile;
 	infile.open("code.txt");
 	assert(infile.is_open());
-	
+
 	while (!infile.eof()) {
 		infile >> op >> L >> A;
-		code.push_back((Code){op, L, A});
+		code.push_back(Code(op, L, A));
 	}
 	infile.close();
 }
 
 void init_envi()
 {
+	// init regs
+	TP = -1; IP = PC = SP = 0;
 	// instr type
 	h["INT"] = INT; h["CAL"] = CAL; h["LIT"] = LIT; h["LOD"] = LOD;
 	h["STO"] = STO; h["JMP"] = JMP; h["JPC"] = JPC; h["OPR"] = OPR;
-	
-	// opr type
-	
-	
-	// init regs
-	TP = -1; IP = PC = SP = 0;
-	
-	
-	
+	h["PAR"] = PAR;
+	// assitance
+	paraN = 0;
+	// display = SP + 2; --------+++------------
+}
+
+void par()
+{
+	paraN++;
+	//stack[TP+4+paraN] = A;		// pass address	
+	int base = stack[display + L];
+	int value = stack[base + A];
+	stack[TP + 4 + paraN] = value;
 }
 
 void cal()
 {
-	PC = A;		// jump to func...
-	
-	
+	stack[TP + 1] = SP;			// save old SP
+	stack[TP + 2] = PC;			// save RET ADDRESS
+	stack[TP + 3] = display;	// save GLOBAL DISPLAY_BASE
+	stack[TP + 4] = paraN;		// save PARA NUM
+
+	int pre_display = display;
+	display = TP + 5 + stack[TP + 4];
+	for (int i = 0; i<L; i++) {
+		stack[display + i] = stack[pre_display + i];
+	}
+	stack[display + L] = TP + 1;	// init DISPLAY TABLE
+
+	PC = A;						// jump to func...
 }
 
-inline void lit() { stack[++TP] = A; }
+inline void Int() {
+	SP = TP + 1;		// new SP
+	TP = TP + A;		// new TOP
+}
 
 void lod()
 {
-	
+	// L is the var LEVEL
+	base = stack[display + L];
+	value = stack[base + A];
+	stack[++TP] = value;
 }
 
 void sto()
 {
-	
+	value = stack[TP--];
+	base = stack[display + L];
+	stack[base + A] = value;
 }
 
 inline void jmp() { PC = A; }
-
-inline void jpc() { if (!stack[top]) PC = A; }
+inline void jpc() { if (!stack[TP]) PC = A; }
+inline void lit() { stack[++TP] = A; }
 
 void opr()
 {
-	switch(A) {
-	case RET:
-		TP = SP - 1;
-		SP = stack[SP]; 
+	switch (A) {
+	case RET:	// func return
+		display = stack[SP + 2];		// recover DISPLAY
+		IP = stack[SP + 1];
+		TP = SP - 1; SP = stack[SP]; paraN = 0;
 		break;
 	case NOT:
-		stack[TP] = -stack[TP]; 
+		stack[TP] = -stack[TP];
 		break;
 	case ADD:
-		stack[TP-1] = stack[TP-1] + stack[TP]; TP--;
+		stack[TP - 1] = stack[TP - 1] + stack[TP]; TP--;
 		break;
 	case SUB:
-		stack[TP-1] = stack[TP-1] - stack[TP]; TP--;
+		stack[TP - 1] = stack[TP - 1] - stack[TP]; TP--;
 		break;
 	case MUL:
-		stack[TP-1] = stack[TP-1] * stack[TP]; TP--;
+		stack[TP - 1] = stack[TP - 1] * stack[TP]; TP--;
 		break;
 	case DIV:
-		stack[TP-1] = stack[TP-1] / stack[TP]; TP--;
+		stack[TP - 1] = stack[TP - 1] / stack[TP]; TP--;
 		break;
 	case ODD:
 		stack[TP] = stack[TP] % 2;
 		break;
 	case NUL: break; // null 
-	case EQ :
-		stack[TP-1] = (stack[TP-1] == stack[TP]); TP--;
+	case EQ:
+		stack[TP - 1] = (stack[TP - 1] == stack[TP]); TP--;
 		break;
-	case NE :
-		stack[TP-1] = (stack[TP-1] != stack[TP]); TP--;
+	case NE:
+		stack[TP - 1] = (stack[TP - 1] != stack[TP]); TP--;
 		break;
-	case LT :
-		stack[TP-1] = (stack[TP-1] < stack[TP]); TP--;
+	case LT:
+		stack[TP - 1] = (stack[TP - 1] < stack[TP]); TP--;
 		break;
-	case GE :
-		stack[TP-1] = (stack[TP-1] >= stack[TP]); TP--;
+	case GE:
+		stack[TP - 1] = (stack[TP - 1] >= stack[TP]); TP--;
 		break;
-	case GT :
-		stack[TP-1] = (stack[TP-1] > stack[TP]); TP--;
+	case GT:
+		stack[TP - 1] = (stack[TP - 1] > stack[TP]); TP--;
 		break;
-	case LE :
-		stack[TP-1] = (stack[TP-1] <= stack[TP]); TP--;
+	case LE:
+		stack[TP - 1] = (stack[TP - 1] <= stack[TP]); TP--;
 		break;
 	case WRT: cout << stack[TP--] << endl; break;
 	case EDL: cout << endl; break;
@@ -137,14 +166,15 @@ int main()
 {
 	load_code();
 	init_envi();
-	
+
 	Code cur;
 	while (true)
 	{
 		cur = code[IP];
+		op = cur.op; L = cur.L; A = cur.A;
 		PC = IP + 1;
-		
-		switch(h[op]) {
+
+		switch (h[op]) {
 		case CAL: cal(); break;
 		case LIT: lit(); break;
 		case LOD: lod(); break;
@@ -152,11 +182,31 @@ int main()
 		case JMP: jmp(); break;
 		case JPC: jpc(); break;
 		case OPR: opr(); break;
+		case INT: Int(); break;
+		case PAR: par(); break;
 		default: assert(-1);
 		}
-		
+
 		IP = PC;
 	}
-		
+
 	return 0;
 }
+
+/*
+display Table:
+| *NULL*
+TP->	| VAR
+| display-L
+| ...
+| display-1
+display->| display-0
+| para...N
+| ...
+| para...1
+| paraN
+| global DISPLAY
+| ret ADDR
+SP->	| old SP
+----------------------
+*/

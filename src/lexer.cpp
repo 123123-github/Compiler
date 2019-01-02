@@ -4,6 +4,7 @@
 #include <cstring>
 #include "lexer.h"
 #include "tag.h"
+#include "token.h"
 using std::string;
 
 // constructor & destructor
@@ -11,7 +12,7 @@ Lexer::Lexer(FILE* infile)
 {
 	in = infile;
 	
-	token = 0;
+	token = Token(Tag::ERROR, 0, "");
 	peek = ' ';
 	line = col = 1;
 	
@@ -87,18 +88,17 @@ inline void Lexer::add_word(int type, const string& s)
 
 inline void Lexer::get_token(int v)
 {
-	token = NUM;
-	tokenValue = v;
+	token = Token(Tag::NUM, v, "");
 }
 
 inline void Lexer::get_token(const string& s)
 {
-	tokenWord = s;
+	token.lexeme = s;
 	if (!words.count(s)) {
-		add_word(token = ID, s);		// is reserve word
+		token.tag = Tag::ID;
 	}
 	else {
-		token = words[s];								// isn't 
+		token.tag = (Tag)words[s];
 	}
 }
 
@@ -119,7 +119,7 @@ int Lexer::get_col()
 	return col;
 }
 
-int Lexer::nextToken()
+Token Lexer::nextToken()
 {	
 	if ( peek != EOF )
 	{
@@ -182,9 +182,9 @@ int Lexer::nextToken()
 			}
 			peek = ' ';
 		}
-		else token = EOF;
+		else token.tag = Tag::OVER;
 	}
-	else token = EOF;
+	else token.tag = Tag::OVER;
 	
 	return token;
 }

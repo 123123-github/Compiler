@@ -16,9 +16,11 @@ enum Tag{
 	ID, NUM,
 	COMMA, SEMICOLON,		// , ;
 	LPAR, RPAR,				// ( )
+	OVER,					// file over
 	
 	// symbol table
 	VAR_TYPE = 256,
 	CONST_TYPE,
 	PROC_TYPE,
+	PARA_TYPE,
 };
