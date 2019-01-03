@@ -25,7 +25,7 @@ public:
 	void gen(Gen instr);
 	void gen(Gen instr, int x);
 	void gen(Gen instr, Tag op);
-	void gen(Gen instr, Type name_info);
+	void gen(Gen instr, Type name_info, int level);
 	void backpatch(int code_pos, int jmp_pos);
 
 };
@@ -53,9 +53,9 @@ inline void Node::output()
 	int line = code.size();
 	ofstream outfile;
 	outfile.open("code.txt");
-	assert(outfile.fail());
+	assert(outfile.is_open());
 	for (int i = 0; i < line; i++) {
-		outfile << code[i].op << ' ' << code[i].L << code[i].A << '\n';
+		outfile << code[i].op << ' ' << code[i].L << ' ' <<code[i].A << '\n';
 	}
 	outfile.close();
 }
@@ -150,27 +150,32 @@ inline void Node::gen(Gen instr, Tag op)
 	}
 }
 
-inline void Node::gen(Gen instr, Type name_info)
+inline void Node::gen(Gen instr, Type name_info, int level)
 {
 	switch (instr)
 	{
 	case Gen::CAL:
-		emit("CAL", name_info.proc_level(), name_info.proc_pos());
+		emit("CAL", level, name_info.get_code_pos_info());
+		break;
+	case Gen::LOD:
+		if (name_info.get_type() == Tag::VAR_TYPE) {
+			emit("LOD", level, name_info.get_table_info());
+		}
+		else if (name_info.get_type() == Tag::CONST_TYPE) {
+			emit("LIT", 0, name_info.get_table_info());
+		}
 		break;
 	case Gen::STO:
-		
-		//emit("STO", name_info.proc_level(), name_info.proc_pos());
-		
+		emit("STO", level, name_info.get_table_info());
 		break;
 	case Gen::RED:
-		//emit("LOD", name_info.proc_level(), );
-		//emit("STO", name_info.proc_level(), name_info.proc_pos());
+		emit("LOD", level, name_info.get_table_info());
+		emit("OPR", 0, (int)OPR::RED);
+		emit("STO", level, name_info.get_table_info());
 		break;
 	default:
 		break;
 	}
-
-
 }
 
 inline void Node::backpatch(int code_pos, int jmp_pos)

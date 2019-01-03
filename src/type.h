@@ -7,39 +7,22 @@ class Type
 public:
 	Type() {};
 	~Type() {};
-	Type(Tag t, int width, int offset, int value, void* nextv) : type(t), width(width), offset(offset), value(value), nextv(nextv) {}
+	Type(Tag t, int table_info, int code_pos_info, void* nextv) : 
+		type(t), table_info(table_info), code_pos_info(code_pos_info), nextv(nextv) {}
 
 private:
-	Tag type;	// CONST, VAR, PARA, PROC
-	int width;
-	int offset;
-	int value;
+	Tag type;	// CONST, VAR, PARA, PROC...TYPE
+	int table_info;
+	int code_pos_info;
 	void* nextv;
 public:
-	// proc info
-	int proc_pos() {
-		return 0;
+	Tag get_type() {
+		return type;
 	}
-	int proc_level() {
-		return 0;
+	int get_table_info() {
+		return table_info;
 	}
-	// const info
-	int const_value() {
-
-		return 0;
-	}
-	// var info
-	int var_level() {
-		return 0;
-	}
-	int var_offset() {
-		return 0;
-	}
-	// par info
-	int par_level() {
-		return 0;
-	}
-	int par_offset() {
-		return 0;
+	int get_code_pos_info() {
+		return code_pos_info;
 	}
 };

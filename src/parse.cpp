@@ -29,6 +29,8 @@ void Parser::program()
 	if (lex.token.tag != Tag::OVER) {
 		get_error();
 	}
+
+	node.output();
 }
 
 inline void Parser::move()
@@ -66,7 +68,7 @@ void Parser::prog()
 	
 	table_list.enter_proc(temp.lexeme);	// new symbol table
 	block();
-	table_list.leave_proc();	// goback symbol table
+	table_list.leave_proc();			// goback symbol table
 }
 
 void Parser::block()
@@ -125,13 +127,18 @@ void Parser::vardecl()
 
 void Parser::proc()
 {
-	Token temp; int paraN = 0;
+	Token temp; 
+	int paraN = 0, code_pos = node.get_nextquad();
 	
 	match(Tag::PROCEDURE); temp = lex.token; match(Tag::ID); match(Tag::LPAR);
-	table_list.enter_proc(temp.lexeme);	// new symbol table
-	
-	if (look == Tag::ID) { move(); paraN++;
+	table_list.enter_proc(temp.lexeme);	// --- new symbol table ---
+	if (look == Tag::ID) { 
+		// --- add to symbol ---
+		table_list.save(Tag::PARA_TYPE, lex.token.lexeme, paraN);
+		move(); paraN++;
 		while (look == Tag::COMMA) { move();
+			// --- add to symbol ---
+			table_list.save(Tag::PARA_TYPE, lex.token.lexeme, paraN);
 			match(Tag::ID); paraN++;
 		}
 	}
@@ -143,9 +150,10 @@ void Parser::proc()
 	}
 
 	void* next_pos = table_list.cur_proc();
-	table_list.leave_proc();	// goback symbol table
+	table_list.leave_proc();			// --- goback symbol table ---
 	// --- add to symbol ---
-	table_list.save(Tag::PROC_TYPE, temp.lexeme, paraN, next_pos);
+	table_list.save(Tag::PROC_TYPE, temp.lexeme, paraN, code_pos, next_pos);
+	
 }
 
 void Parser::body()
@@ -161,16 +169,16 @@ void Parser::body()
 void Parser::statement()
 {
 	Type type_temp; Token token_temp;
-	int m1, m2, paraN;
+	int m1, m2, paraN = 0, level;
 
 	switch (look) {
 	case Tag::ID:										// ASSIGN---
 		// SYMBOL TABLE - find name
 		token_temp = lex.token;
-		table_list.find(token_temp.lexeme, type_temp);
+		table_list.find(token_temp.lexeme, type_temp, level);
 		move(); match(Tag::ASSIGN); exp();
 		// --- gen code ---
-		node.gen(Gen::LOD, type_temp);
+		node.gen(Gen::STO, type_temp, level);
 		break;
 	case Tag::IF: move();								// IF---ELSE---
 		lexp();
@@ -186,23 +194,24 @@ void Parser::statement()
 		node.backpatch(m1, m2);
 		node.backpatch(m2 + 1, node.get_nextquad());
 		break;
-	case Tag::WHILE: move();								// WHILE---
-		m1 = node.get_nextquad(); lexp(); 
+	case Tag::WHILE: move();							// WHILE---
 		// --- gen code ---
+		m1 = node.get_nextquad(); 
+		lexp();
+		m2 = node.get_nextquad();
 		node.gen(Gen::JPC, -1);			// JPC
 		match(Tag::DO); statement();
-		m2 = node.get_nextquad();
-		node.backpatch(m1, m2);
 		// --- gen code ---
 		node.gen(Gen::JMP, m1);			// JMP
+		node.backpatch(m2, node.get_nextquad());
 		break;
 	case Tag::CALL: move();								// CALL---
 		// SYMBOL TABLE - find name
 		token_temp = lex.token;
-		table_list.find(token_temp.lexeme, type_temp);
+		table_list.find(token_temp.lexeme, type_temp, level);
 		match(Tag::ID); match(Tag::LPAR);
 		if (is_exp(look)) { 
-			exp(); paraN = 1;
+			exp(); paraN++;
 			while (look == Tag::COMMA) {
 				move(); exp(); paraN++;
 			}
@@ -210,25 +219,25 @@ void Parser::statement()
 		match(Tag::RPAR);
 		// --- gen code ---
 		node.gen(Gen::PAR, paraN);
-		node.gen(Gen::CAL, type_temp);
+		node.gen(Gen::CAL, type_temp, level);
 		break;
-	case Tag::BEGIN:										// BODY---
+	case Tag::BEGIN:									// BODY---
 		body();
 		break;
 	case Tag::READ: move();								// READ---
 		match(Tag::LPAR);
 		// SYMBOL TABLE - find name
 		token_temp = lex.token;
-		table_list.find(token_temp.lexeme, type_temp);
+		table_list.find(token_temp.lexeme, type_temp, level);
 		match(Tag::ID);
 		// --- gen code ---
-		node.gen(Gen::RED, type_temp);
+		node.gen(Gen::RED, type_temp, level);
 		while (look == Tag::COMMA) { move();
 			// SYMBOL TABLE - find name
 			token_temp = lex.token;
-			table_list.find(token_temp.lexeme, type_temp);
+			table_list.find(token_temp.lexeme, type_temp, level);
 			// --- gen code ---
-			node.gen(Gen::RED, type_temp);
+			node.gen(Gen::RED, type_temp, level);
 			match(Tag::ID);
 		}
 		match(Tag::RPAR);
@@ -304,15 +313,16 @@ void Parser::term()
 
 void Parser::factor()
 {
+	int level;
 	Token token_temp; Type type_temp;
 	switch (look) {
 	case Tag::ID:
 		// SYMBOL TABLE - find name
 		token_temp = lex.token;
-		table_list.find(token_temp.lexeme, type_temp);
+		table_list.find(token_temp.lexeme, type_temp, level);
 		move();
 		// --- gen code ---
-		node.gen(Gen::LOD, type_temp);
+		node.gen(Gen::LOD, type_temp, level);
 		break;
 	case Tag::NUM:
 		token_temp = lex.token;

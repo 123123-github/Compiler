@@ -16,7 +16,7 @@ public:
 	int offset_used;
 	int level;
 public:
-	bool put(Tag t, const string& name, int x = 0, void* table_pos = NULL);
+	bool put(Tag t, const string& name, int table_info = 0, int code_pos_info = 0, void* table_pos = NULL);
 	bool get(const string& name, Type& name_info);
 };
 
@@ -25,6 +25,7 @@ inline Env::Env()
 	prev = NULL;
 	table.clear();
 	offset_used = 0;
+	level = 0;
 }
 
 inline Env::~Env()
@@ -33,21 +34,22 @@ inline Env::~Env()
 }
 
 // put symbol in this table
-inline bool Env::put(Tag t, const string& name, int x, void* table_pos)
+inline bool Env::put(Tag t, const string& name, int table_info, int code_pos_info, void* table_pos)
 {
+	// deal error...here ->
+	// if DEFINE then error()
+	// deal error...here <-
+
 	if (t == Tag::CONST_TYPE) {
-		table[name] = Type(Tag::CONST_TYPE, 1, 0, x, NULL);
-		// x is value
+		table[name] = Type(Tag::CONST_TYPE, table_info, 0, NULL);
+		// table _info is the value of CONST_TYPE
 	}
 	else if (t == Tag::VAR_TYPE) {
-		table[name] = Type(Tag::VAR_TYPE, 1, offset_used, 0, NULL);
+		table[name] = Type(Tag::VAR_TYPE, offset_used, 0, NULL);
 		offset_used++;
-		// x is offset_pos
 	}
-	else if (t == Tag::PROC_TYPE)
-	{
-		table[name] = Type(Tag::PROC_TYPE, x, 0, 0, table_pos);
-		// x is paraN
+	else if (t == Tag::PROC_TYPE) {
+		table[name] = Type(Tag::PROC_TYPE, table_info, code_pos_info, table_pos);
 	}
 
 	return false;
@@ -76,8 +78,8 @@ private:
 public:
 	void enter_proc(string proc_name);
 	void leave_proc();
-	bool find(const string& name, Type& type_info);
-	bool save(Tag t, const string& name, int x = 0, void* table_pos = NULL);
+	bool find(const string& name, Type& type_info, int& cur_level);
+	bool save(Tag t, const string& name, int table_info = 0, int code_pos_info = 0, void* table_pos = NULL);
 	Env* cur_proc();
 };
 
@@ -110,16 +112,19 @@ inline Env * EnvList::cur_proc()
 	return cur_env;
 }
 
-inline bool EnvList::find(const string& name, Type& type_info)
+inline bool EnvList::find(const string& name, Type& type_info, int& cur_level)
 {
 	for (Env* p = cur_env; p; p = p->prev) {
-		if (p->get(name, type_info)) return true;
+		if (p->get(name, type_info)) {
+			cur_level = p->level;
+			return true;
+		}
 	}
 	return false;
 }
 
-inline bool EnvList::save(Tag t, const string & name, int x, void * table_pos)
+inline bool EnvList::save(Tag t, const string& name, int table_info, int code_pos_info, void* table_pos)
 {
-	if (cur_env->put(t, name, x, table_pos)) return true;
+	if (cur_env->put(t, name, table_info, code_pos_info, table_pos)) return true;
 	else return false;
 }
