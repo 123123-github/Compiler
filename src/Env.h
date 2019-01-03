@@ -36,17 +36,17 @@ inline Env::~Env()
 inline bool Env::put(Tag t, const string& name, int x, void* table_pos)
 {
 	if (t == Tag::CONST_TYPE) {
-		table[name] = Type(CONST_TYPE, 1, 0, x, NULL);
+		table[name] = Type(Tag::CONST_TYPE, 1, 0, x, NULL);
 		// x is value
 	}
 	else if (t == Tag::VAR_TYPE) {
-		table[name] = Type(VAR_TYPE, 1, offset_used, 0, NULL);
+		table[name] = Type(Tag::VAR_TYPE, 1, offset_used, 0, NULL);
 		offset_used++;
 		// x is offset_pos
 	}
 	else if (t == Tag::PROC_TYPE)
 	{
-		table[name] = Type(PROC_TYPE, x, 0, 0, table_pos);
+		table[name] = Type(Tag::PROC_TYPE, x, 0, 0, table_pos);
 		// x is paraN
 	}
 

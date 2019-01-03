@@ -3,6 +3,8 @@
 #include <vector>
 #include <fstream>
 #include <assert.h>
+using namespace std;
+
 struct Code {
 	string op; int L, A;
 	Code(string op = "", int L = 0, int A = 0) :op(op), L(L), A(A) {};
@@ -68,14 +70,14 @@ inline void Node::gen(Gen instr)
 	// RET WRT NEG
 	switch (instr)
 	{
-	case WRT:
-		emit("OPR", 0, OPR::WRT);
+	case Gen::WRT:
+		emit("OPR", 0, (int)OPR::WRT);
 		break;
-	case RET:
-		emit("OPR", 0, OPR::RET);
+	case Gen::RET:
+		emit("OPR", 0, (int)OPR::RET);
 		break;
-	case NEG:
-		emit("OPR", 0, OPR::NEG);
+	case Gen::NEG:
+		emit("OPR", 0, (int)OPR::NEG);
 		break;
 	default:
 		break;
@@ -86,19 +88,19 @@ inline void Node::gen(Gen instr, int x)
 {
 	switch (instr)
 	{
-	case LIT:
+	case Gen::LIT:
 		emit("LIT", 0, x);
 		break;
-	case INT:
+	case Gen::INT:
 		emit("INT", 0, x);
 		break;
-	case PAR:
+	case Gen::PAR:
 		emit("PAR", 0, x);
 		break;
-	case JMP:
+	case Gen::JMP:
 		emit("JMP", 0, x);
 		break;
-	case JPC:
+	case Gen::JPC:
 		emit("JPC", 0, x);
 		break;
 	default:
@@ -110,38 +112,38 @@ inline void Node::gen(Gen instr, Tag op)
 {
 	switch (op)
 	{
-	case ODD:
-		emit("OPR", 0, OPR::ODD);
+	case Tag::ODD:
+		emit("OPR", 0, (int)OPR::ODD);
 		break;
-	case EQ:
-		emit("OPR", 0, OPR::EQ);
+	case Tag::EQ:
+		emit("OPR", 0, (int)OPR::EQ);
 		break;
-	case NE:
-		emit("OPR", 0, OPR::NE);
+	case Tag::NE:
+		emit("OPR", 0, (int)OPR::NE);
 		break;
-	case LESS:
-		emit("OPR", 0, OPR::LT);
+	case Tag::LESS:
+		emit("OPR", 0, (int)OPR::LT);
 		break;
-	case LE:
-		emit("OPR", 0, OPR::LE);
+	case Tag::LE:
+		emit("OPR", 0, (int)OPR::LE);
 		break;
-	case GREATER:
-		emit("OPR", 0, OPR::GT);
+	case Tag::GREATER:
+		emit("OPR", 0, (int)OPR::GT);
 		break;
-	case GE:
-		emit("OPR", 0, OPR::GE);
+	case Tag::GE:
+		emit("OPR", 0, (int)OPR::GE);
 		break;
-	case ADD:
-		emit("OPR", 0, OPR::ADD);
+	case Tag::ADD:
+		emit("OPR", 0, (int)OPR::ADD);
 		break;
-	case SUB:
-		emit("OPR", 0, OPR::SUB);
+	case Tag::SUB:
+		emit("OPR", 0, (int)OPR::SUB);
 		break;
-	case MUL:
-		emit("OPR", 0, OPR::MUL);
+	case Tag::MUL:
+		emit("OPR", 0, (int)OPR::MUL);
 		break;
-	case DIV:
-		emit("OPR", 0, OPR::DIV);
+	case Tag::DIV:
+		emit("OPR", 0, (int)OPR::DIV);
 		break;
 	default:
 		break;
@@ -152,15 +154,15 @@ inline void Node::gen(Gen instr, Type name_info)
 {
 	switch (instr)
 	{
-	case CAL:
+	case Gen::CAL:
 		emit("CAL", name_info.proc_level(), name_info.proc_pos());
 		break;
-	case STO:
+	case Gen::STO:
 		
 		//emit("STO", name_info.proc_level(), name_info.proc_pos());
 		
 		break;
-	case RED:
+	case Gen::RED:
 		//emit("LOD", name_info.proc_level(), );
 		//emit("STO", name_info.proc_level(), name_info.proc_pos());
 		break;
@@ -169,4 +171,9 @@ inline void Node::gen(Gen instr, Type name_info)
 	}
 
 
+}
+
+inline void Node::backpatch(int code_pos, int jmp_pos)
+{
+	code[code_pos].A = jmp_pos;
 }

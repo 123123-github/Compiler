@@ -18,38 +18,38 @@ Lexer::Lexer(FILE* infile)
 	
 	words.clear();
 	// reserve word
-	add_word(PROGRAM,	"program");
-	add_word(CONST,		"const");
-	add_word(VAR,		"var");
-	add_word(PROCEDURE,	"procedure");
-	add_word(BEGIN,		"begin");
-	add_word(END,		"end");
-	add_word(IF,		"if");
-	add_word(THEN,		"then");
-	add_word(ELSE,		"else");
-	add_word(WHILE,		"while");
-	add_word(DO,		"do");
-	add_word(CALL,		"call");
-	add_word(READ,		"read");
-	add_word(WRITE,		"write");
-	add_word(ODD,		"odd");
+	add_word((int)Tag::PROGRAM,	"program");
+	add_word((int)Tag::CONST,		"const");
+	add_word((int)Tag::VAR,		"var");
+	add_word((int)Tag::PROCEDURE,	"procedure");
+	add_word((int)Tag::BEGIN,		"begin");
+	add_word((int)Tag::END,		"end");
+	add_word((int)Tag::IF,		"if");
+	add_word((int)Tag::THEN,		"then");
+	add_word((int)Tag::ELSE,		"else");
+	add_word((int)Tag::WHILE,		"while");
+	add_word((int)Tag::DO,		"do");
+	add_word((int)Tag::CALL,		"call");
+	add_word((int)Tag::READ,		"read");
+	add_word((int)Tag::WRITE,		"write");
+	add_word((int)Tag::ODD,		"odd");
 	// reserve symbol
-	add_word(ADD,		"+");
-	add_word(SUB,		"-");
-	add_word(MUL,		"*");
-	add_word(DIV,		"/");
-	add_word(ASSIGN,	":=");
-	add_word(EQ,		"=");
-	add_word(LESS,		"<");
-	add_word(NE,		"<>");
-	add_word(LE,		"<=");
-	add_word(GREATER,	">");
-	add_word(GE,		">=");
-	add_word(LPAR,		"(");
-	add_word(RPAR,		")");
+	add_word((int)Tag::ADD,		"+");
+	add_word((int)Tag::SUB,		"-");
+	add_word((int)Tag::MUL,		"*");
+	add_word((int)Tag::DIV,		"/");
+	add_word((int)Tag::ASSIGN,	":=");
+	add_word((int)Tag::EQ,		"=");
+	add_word((int)Tag::LESS,		"<");
+	add_word((int)Tag::NE,		"<>");
+	add_word((int)Tag::LE,		"<=");
+	add_word((int)Tag::GREATER,	">");
+	add_word((int)Tag::GE,		">=");
+	add_word((int)Tag::LPAR,		"(");
+	add_word((int)Tag::RPAR,		")");
 	// reserve limit
-	add_word(COMMA,		",");
-	add_word(SEMICOLON,	";");
+	add_word((int)Tag::COMMA,		",");
+	add_word((int)Tag::SEMICOLON,	";");
 }
 
 Lexer::~Lexer()
@@ -104,7 +104,7 @@ inline void Lexer::get_token(const string& s)
 
 inline void Lexer::get_error()
 {
-	token = ERROR;
+	token = Tag::ERROR;
 	fprintf(stderr, "Line:%3d, Col:%3d: [Error] stray '%c' in program.\n", line, col, peek);
 }
 

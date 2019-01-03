@@ -18,28 +18,28 @@ private:
 public:
 	// proc info
 	int proc_pos() {
-	
+		return 0;
 	}
 	int proc_level() {
-	
+		return 0;
 	}
 	// const info
 	int const_value() {
 
-	
+		return 0;
 	}
 	// var info
 	int var_level() {
-
+		return 0;
 	}
 	int var_offset() {
-
+		return 0;
 	}
 	// par info
 	int par_level() {
-
+		return 0;
 	}
 	int par_offset() {
-
+		return 0;
 	}
 };
