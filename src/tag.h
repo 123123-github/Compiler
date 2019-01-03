@@ -1,6 +1,6 @@
 #pragma once
 
-enum Tag{
+enum class Tag{
 	// lexer read
 	ERROR = 0,
 	PROGRAM, 
@@ -25,10 +25,16 @@ enum Tag{
 	PARA_TYPE,
 };
 
-enum Gen
+enum class Gen
 {
 	// instr type
 	INT, CAL, LIT, LOD, STO, JMP, JPC, OPR, PAR,
 	// assistant instr type
 	RED, WRT, RET, NEG,
+};
+
+enum class OPR
+{
+	RET, NEG, ADD, SUB, MUL, DIV, ODD, NUL,
+	EQ, NE, LT, GE, GT, LE, WRT, EDL, RED,
 };

@@ -258,7 +258,7 @@ void Parser::lexp()
 	switch (look) {
 	case ODD: move();
 		exp();
-		node.gen(ODD);
+		node.gen(Gen::OPR, Tag::ODD);
 		break;
 	case ADD:
 	case SUB:

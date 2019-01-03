@@ -15,4 +15,31 @@ private:
 	int offset;
 	int value;
 	void* nextv;
+public:
+	// proc info
+	int proc_pos() {
+	
+	}
+	int proc_level() {
+	
+	}
+	// const info
+	int const_value() {
+
+	
+	}
+	// var info
+	int var_level() {
+
+	}
+	int var_offset() {
+
+	}
+	// par info
+	int par_level() {
+
+	}
+	int par_offset() {
+
+	}
 };
