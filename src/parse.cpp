@@ -71,12 +71,22 @@ void Parser::prog()
 
 void Parser::block()
 {
+	// --- gen code ---
+	int m1 = node.get_nextquad();
+	node.gen(Tag::BEGIN);
+
 	if (look == CONST)	condecl();
 	if (look == VAR)	vardecl();
-	if (look == PROCEDURE) {
-		proc();
-	}
+	if (look == PROCEDURE) { proc(); }
+	
+	// --- gen code ---
+	node.backpatch(m1, node.get_nextquad());
+	node.gen(table_list.cur_proc()->offset_used);	// INT
+
 	body();
+
+	// --- gen code ---
+	node.gen(Tag::END);
 }
 
 void Parser::condecl()
@@ -135,7 +145,6 @@ void Parser::proc()
 	table_list.leave_proc();	// goback symbol table
 	// --- add to symbol ---
 	table_list.save(Tag::PROC_TYPE, temp.lexeme, paraN, next_pos);
-	// table_list.cur_proc()->put(Tag::PROC_TYPE, temp.lexeme, paraN, next_pos);
 }
 
 void Parser::body()
@@ -150,64 +159,93 @@ void Parser::body()
 
 void Parser::statement()
 {
+	Type type_temp; Token token_temp;
+	int m1, m2;
+
 	switch (look) {
-	case ID: move();
-		match(ASSIGN); exp();
-
-
-
+	case ID:										// ASSIGN---
+		// SYMBOL TABLE - find name
+		token_temp = lex.token;
+		table_list.find(token_temp.lexeme, type_temp);
+		move(); match(ASSIGN); exp();
+		// --- gen code ---
+		node.gen(type_temp, Tag::ASSIGN);
 		break;
-	case IF: move();
-		lexp(); match(THEN); statement();
+	case IF: move();								// IF---ELSE---
+		lexp();
+		// --- gen code ---
+		m1 = node.get_nextquad();		// JRC
+		node.gen(Tag::IF);
+		match(THEN); statement();		
 		if (look == ELSE) { move();
+			m2 = node.get_nextquad();
+			node.gen(Tag::ELSE);		// JMP
 			statement();
 		}
-
-
-
+		node.backpatch(m1, m2);
+		node.backpatch(m2 + 1, node.get_nextquad());
 		break;
-	case WHILE: move();
-		lexp(); match(DO); statement();
-
-
-
+	case WHILE: move();								// WHILE---
+		m1 = node.get_nextquad(); lexp(); 
+		// --- gen code ---
+		node.gen(Tag::WHILE);
+		match(DO); statement();
+		m2 = node.get_nextquad();
+		node.backpatch(m1, m2);
+		// --- gen code ---
+		node.gen(Tag::WHILE, m1);
 		break;
-	case CALL: move();
+	case CALL: move();								// CALL---
+		// SYMBOL TABLE - find name
+		token_temp = lex.token;
+		table_list.find(token_temp.lexeme, type_temp);
 		match(ID); match(LPAR);
 		if (is_exp(look)) { exp();
+			// --- gen code ---
+			node.gen(Tag::PARA_TYPE);
 			while (look == COMMA) { move();
 				exp();
 			}
 		}
 		match(RPAR);
-
-
-
+		// --- gen code ---
+		node.gen(type_temp);
 		break;
-	case BEGIN:
+	case BEGIN:										// BODY---
 		body();
-
-
-
 		break;
-	case READ: move();
+	case READ: move();								// READ---
 		match(LPAR);
+
+		// SYMBOL TABLE - find name
+		token_temp = lex.token;
+		table_list.find(token_temp.lexeme, type_temp);
 		match(ID);
+		// --- gen code ---
+		node.gen(type_temp);	// load to stack top
+		node.gen(Tag::READ);
 		while (look == COMMA) { move();
+			// SYMBOL TABLE - find name
+			token_temp = lex.token;
+			table_list.find(token_temp.lexeme, type_temp);
+			// --- gen code ---
+			node.gen(type_temp);	// load to stack top
+			node.gen(Tag::READ);
 			match(ID);
 		}
 		match(RPAR);
-
-
 		break;
-	case WRITE: move();
-		match(LPAR);
+	case WRITE: move();								// WRITE---
+		match(LPAR); 
 		exp();
+		// --- gen code ---
+		node.gen(Tag::WRITE);
 		while (look == COMMA) { move();
 			exp();
+			// --- gen code ---
+			node.gen(Tag::WRITE);
 		}
 		match(RPAR);
-
 		break;
 	default:
 		;
@@ -217,16 +255,21 @@ void Parser::statement()
 
 void Parser::lexp()
 {
+	Tag op;
+
 	switch (look) {
 	case ODD: move();
 		exp();
+		node.gen(ODD);
 		break;
 	case ADD:
 	case SUB:
 	case ID:
 	case NUM:
 	case LPAR:
-		exp(); lop(); exp();
+		exp(); op = look; lop(); exp();
+		// --- gen code ---
+		node.gen(op);
 		break;
 	default:
 		;
@@ -235,27 +278,49 @@ void Parser::lexp()
 
 void Parser::exp()
 {
-	if (is_aop(look)) { move(); }
+	Tag op = Tag::ERROR;
+
+	if (is_aop(look)) { op = look; move(); }
 	term();
-	while (is_aop(look)) { move();
-		term();
+	// --- gen code ---
+	if (op) node.gen(op, 1);
+
+	while (is_aop(look)) { 
+		op = look;
+		move(); term();
+		// --- gen code ---
+		node.gen(op);
 	}	
 }
 
 void Parser::term()
 {
 	factor();
-	while (is_mop(look)) { move();
-		factor();
+	while (is_mop(look)) { 
+		Tag op = look;
+		move(); factor();
+		// --- gen code ---
+		node.gen(op);
 	}	
 }
 
 void Parser::factor()
 {
+	Token token_temp; Type type_temp;
 	switch (look) {
-	case ID: move();
+	case ID: 
+		// SYMBOL TABLE - find name
+		token_temp = lex.token;
+		table_list.find(token_temp.lexeme, type_temp);
+		move();
+		// --- gen code ---
+		node.gen(type_temp);
 		break;
-	case NUM: move();
+	case NUM: 
+		token_temp = lex.token;
+		move();
+		// --- gen code ---
+		node.gen(token_temp.value);
 		break;
 	case LPAR: move();
 		exp(); match(RPAR);

@@ -1,5 +1,6 @@
 #pragma once
 #include "env.h"
+#include "node.h"
 
 class Parser
 {
@@ -12,6 +13,7 @@ private:
 	Tag look;
 	EnvList table_list;	// symbol table list
 	int offset_used;
+	Node node;
 private:
 	void move();
 	bool match(Tag t);

@@ -16,9 +16,7 @@ public:
 	int offset_used;
 	int level;
 public:
-	// put symbol in this table
 	bool put(Tag t, const string& name, int x = 0, void* table_pos = NULL);
-	// find symbol by name
 	bool get(const string& name, Type& name_info);
 };
 
@@ -34,6 +32,7 @@ inline Env::~Env()
 	if (prev) delete prev;
 }
 
+// put symbol in this table
 inline bool Env::put(Tag t, const string& name, int x, void* table_pos)
 {
 	if (t == Tag::CONST_TYPE) {
@@ -54,6 +53,7 @@ inline bool Env::put(Tag t, const string& name, int x, void* table_pos)
 	return false;
 }
 
+// find symbol by name
 inline bool Env::get(const string& name, Type& name_info)
 {
 	if (table.count(name)) {
