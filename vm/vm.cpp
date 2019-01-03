@@ -63,10 +63,10 @@ void init_envi()
 void par()
 {
 	paraN++;
-	//stack[TP+4+paraN] = A;		// pass address	
-	int base = stack[display + L];
-	int value = stack[base + A];
-	stack[TP + 4 + paraN] = value;
+	stack[TP+4+paraN] = A;		// pass value
+	//int base = stack[display + L];
+	//int value = stack[base + A];
+	//stack[TP + 4 + paraN] = value;
 }
 
 void cal()
@@ -76,14 +76,15 @@ void cal()
 	stack[TP + 3] = display;	// save GLOBAL DISPLAY_BASE
 	stack[TP + 4] = paraN;		// save PARA NUM
 
-	int pre_display = display;
+	// copy display table
+	int pre_display = display;		
 	display = TP + 5 + stack[TP + 4];
 	for (int i = 0; i<L; i++) {
 		stack[display + i] = stack[pre_display + i];
 	}
 	stack[display + L] = TP + 1;	// init DISPLAY TABLE
 
-	PC = A;						// jump to func...
+	PC = A;							// jump to func...
 }
 
 inline void Int() {

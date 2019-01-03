@@ -9,11 +9,10 @@ public:
 	~Parser();
 	void program();
 private:
-	Lexer lex;
 	Tag look;
+	Lexer lex;			// lexer
 	EnvList table_list;	// symbol table list
-	int offset_used;
-	Node node;
+	Node node;			// gen code
 private:
 	void move();
 	bool match(Tag t);

@@ -8,12 +8,13 @@ public:
 private:
 	int nextquad;
 public:
-	void gen(Tag t);				// a + b
-	void gen(Tag t, int opnd_num);	// -a
-	void gen(Type opnd);			// lod CONST VAR PARA PROC
-	void gen(Type oped, Tag t);		// assign
-	void gen(int imm);				// 5
-	int get_nextquad();
+	void emit();
+	void output();
+	int  get_nextquad();
+	void gen(Gen instr);
+	void gen(Gen instr, int x);
+	void gen(Gen instr, Tag op);
+	void gen(Gen instr, Type name_info);
 	void backpatch(int code_pos, int jmp_pos);
 };
 

@@ -24,3 +24,11 @@ enum Tag{
 	PROC_TYPE,
 	PARA_TYPE,
 };
+
+enum Gen
+{
+	// instr type
+	INT, CAL, LIT, LOD, STO, JMP, JPC, OPR, PAR,
+	// assistant instr type
+	RED, WRT, RET, NEG,
+};

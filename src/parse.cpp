@@ -73,7 +73,7 @@ void Parser::block()
 {
 	// --- gen code ---
 	int m1 = node.get_nextquad();
-	node.gen(Tag::BEGIN);
+	node.gen(Gen::JMP, -1);
 
 	if (look == CONST)	condecl();
 	if (look == VAR)	vardecl();
@@ -81,12 +81,13 @@ void Parser::block()
 	
 	// --- gen code ---
 	node.backpatch(m1, node.get_nextquad());
-	node.gen(table_list.cur_proc()->offset_used);	// INT
+	int size = table_list.cur_proc()->offset_used;
+	node.gen(Gen::INT, size);
 
 	body();
 
 	// --- gen code ---
-	node.gen(Tag::END);
+	node.gen(Gen::RET);
 }
 
 void Parser::condecl()
@@ -160,7 +161,7 @@ void Parser::body()
 void Parser::statement()
 {
 	Type type_temp; Token token_temp;
-	int m1, m2;
+	int m1, m2, paraN;
 
 	switch (look) {
 	case ID:										// ASSIGN---
@@ -169,17 +170,17 @@ void Parser::statement()
 		table_list.find(token_temp.lexeme, type_temp);
 		move(); match(ASSIGN); exp();
 		// --- gen code ---
-		node.gen(type_temp, Tag::ASSIGN);
+		node.gen(Gen::LOD, type_temp);
 		break;
 	case IF: move();								// IF---ELSE---
 		lexp();
 		// --- gen code ---
-		m1 = node.get_nextquad();		// JRC
-		node.gen(Tag::IF);
-		match(THEN); statement();		
+		m1 = node.get_nextquad();		// JPC
+		node.gen(Gen::JPC, -1);
+		match(THEN); statement();
 		if (look == ELSE) { move();
 			m2 = node.get_nextquad();
-			node.gen(Tag::ELSE);		// JMP
+			node.gen(Gen::JMP, -1);		// JMP
 			statement();
 		}
 		node.backpatch(m1, m2);
@@ -188,49 +189,46 @@ void Parser::statement()
 	case WHILE: move();								// WHILE---
 		m1 = node.get_nextquad(); lexp(); 
 		// --- gen code ---
-		node.gen(Tag::WHILE);
+		node.gen(Gen::JPC, -1);			// JPC
 		match(DO); statement();
 		m2 = node.get_nextquad();
 		node.backpatch(m1, m2);
 		// --- gen code ---
-		node.gen(Tag::WHILE, m1);
+		node.gen(Gen::JMP, m1);			// JMP
 		break;
 	case CALL: move();								// CALL---
 		// SYMBOL TABLE - find name
 		token_temp = lex.token;
 		table_list.find(token_temp.lexeme, type_temp);
 		match(ID); match(LPAR);
-		if (is_exp(look)) { exp();
-			// --- gen code ---
-			node.gen(Tag::PARA_TYPE);
-			while (look == COMMA) { move();
-				exp();
+		if (is_exp(look)) { 
+			exp(); paraN = 1;
+			while (look == COMMA) { 
+				move(); exp(); paraN++;
 			}
 		}
 		match(RPAR);
 		// --- gen code ---
-		node.gen(type_temp);
+		node.gen(Gen::PAR, paraN);
+		node.gen(Gen::CAL, type_temp);
 		break;
 	case BEGIN:										// BODY---
 		body();
 		break;
 	case READ: move();								// READ---
 		match(LPAR);
-
 		// SYMBOL TABLE - find name
 		token_temp = lex.token;
 		table_list.find(token_temp.lexeme, type_temp);
 		match(ID);
 		// --- gen code ---
-		node.gen(type_temp);	// load to stack top
-		node.gen(Tag::READ);
+		node.gen(Gen::RED, type_temp);
 		while (look == COMMA) { move();
 			// SYMBOL TABLE - find name
 			token_temp = lex.token;
 			table_list.find(token_temp.lexeme, type_temp);
 			// --- gen code ---
-			node.gen(type_temp);	// load to stack top
-			node.gen(Tag::READ);
+			node.gen(Gen::RED, type_temp);
 			match(ID);
 		}
 		match(RPAR);
@@ -239,11 +237,11 @@ void Parser::statement()
 		match(LPAR); 
 		exp();
 		// --- gen code ---
-		node.gen(Tag::WRITE);
+		node.gen(Gen::WRT);
 		while (look == COMMA) { move();
 			exp();
 			// --- gen code ---
-			node.gen(Tag::WRITE);
+			node.gen(Gen::WRT);
 		}
 		match(RPAR);
 		break;
@@ -269,7 +267,7 @@ void Parser::lexp()
 	case LPAR:
 		exp(); op = look; lop(); exp();
 		// --- gen code ---
-		node.gen(op);
+		node.gen(Gen::OPR, op);
 		break;
 	default:
 		;
@@ -283,13 +281,13 @@ void Parser::exp()
 	if (is_aop(look)) { op = look; move(); }
 	term();
 	// --- gen code ---
-	if (op) node.gen(op, 1);
+	if (op == Tag::SUB) { node.gen(Gen::NEG); }
 
 	while (is_aop(look)) { 
 		op = look;
 		move(); term();
 		// --- gen code ---
-		node.gen(op);
+		node.gen(Gen::OPR, op);
 	}	
 }
 
@@ -300,7 +298,7 @@ void Parser::term()
 		Tag op = look;
 		move(); factor();
 		// --- gen code ---
-		node.gen(op);
+		node.gen(Gen::OPR, op);
 	}	
 }
 
@@ -314,13 +312,13 @@ void Parser::factor()
 		table_list.find(token_temp.lexeme, type_temp);
 		move();
 		// --- gen code ---
-		node.gen(type_temp);
+		node.gen(Gen::LOD, type_temp);
 		break;
 	case NUM: 
 		token_temp = lex.token;
 		move();
 		// --- gen code ---
-		node.gen(token_temp.value);
+		node.gen(Gen::LIT, token_temp.value);
 		break;
 	case LPAR: move();
 		exp(); match(RPAR);
