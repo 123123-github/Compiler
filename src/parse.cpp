@@ -131,9 +131,11 @@ void Parser::proc()
 {
 	Token temp; 
 	int paraN = 0, code_pos = node.get_nextquad();
-	
+	Env* prev = table_list.cur_proc();
+
 	match(Tag::PROCEDURE); temp = lex.token; match(Tag::ID); match(Tag::LPAR);
-	table_list.enter_proc(temp.lexeme);	// --- new symbol table ---
+	
+	table_list.enter_proc(temp.lexeme);	// --------- new symbol table ---------
 	if (look == Tag::ID) { 
 		// --- add to symbol ---
 		table_list.save(Tag::PARA_TYPE, lex.token.lexeme, paraN);
@@ -147,14 +149,18 @@ void Parser::proc()
 		table_list.set_total_para_num(paraN);
 	}
 	match(Tag::RPAR); match(Tag::SEMICOLON);
-	
-	block();
 
+	// --- add to symbol ---
 	void* next_pos = table_list.cur_proc();
-	table_list.leave_proc();			// --- goback symbol table ---
+	prev->put(Tag::PROC_TYPE, temp.lexeme, paraN,code_pos, next_pos);
+
+	block();
+	table_list.leave_proc();			// --------- goback symbol table ---------
+
+	/*
 	// --- add to symbol ---
 	table_list.save(Tag::PROC_TYPE, temp.lexeme, paraN, code_pos, next_pos);
-	
+	*/
 	while (look == Tag::SEMICOLON) { move();		// --- next proc ---
 		proc();
 	}
