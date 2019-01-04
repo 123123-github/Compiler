@@ -15,6 +15,7 @@ public:
 	map<string, Type> table;	// main table
 	int offset_used;
 	int level;
+	int total_para_num;
 public:
 	bool put(Tag t, const string& name, int table_info = 0, int code_pos_info = 0, void* table_pos = NULL);
 	bool get(const string& name, Type& name_info);
@@ -26,6 +27,7 @@ inline Env::Env()
 	table.clear();
 	offset_used = 0;
 	level = 0;
+	total_para_num = 0;
 }
 
 inline Env::~Env()
@@ -50,6 +52,9 @@ inline bool Env::put(Tag t, const string& name, int table_info, int code_pos_inf
 	}
 	else if (t == Tag::PROC_TYPE) {
 		table[name] = Type(Tag::PROC_TYPE, table_info, code_pos_info, table_pos);
+	}
+	else if (t == Tag::PARA_TYPE) {
+		table[name] = Type(Tag::PARA_TYPE, table_info, code_pos_info, table_pos);
 	}
 
 	return false;
@@ -78,8 +83,9 @@ private:
 public:
 	void enter_proc(string proc_name);
 	void leave_proc();
-	bool find(const string& name, Type& type_info, int& cur_level);
+	bool find(const string& name, Type& type_info, int& cur_level, int& para_num);
 	bool save(Tag t, const string& name, int table_info = 0, int code_pos_info = 0, void* table_pos = NULL);
+	void set_total_para_num(int para_num);
 	Env* cur_proc();
 };
 
@@ -112,11 +118,12 @@ inline Env * EnvList::cur_proc()
 	return cur_env;
 }
 
-inline bool EnvList::find(const string& name, Type& type_info, int& cur_level)
+inline bool EnvList::find(const string& name, Type& type_info, int& cur_level, int& para_num)
 {
 	for (Env* p = cur_env; p; p = p->prev) {
 		if (p->get(name, type_info)) {
 			cur_level = p->level;
+			para_num = p->total_para_num;
 			return true;
 		}
 	}
@@ -127,4 +134,9 @@ inline bool EnvList::save(Tag t, const string& name, int table_info, int code_po
 {
 	if (cur_env->put(t, name, table_info, code_pos_info, table_pos)) return true;
 	else return false;
+}
+
+inline void EnvList::set_total_para_num(int para_num)
+{
+	cur_env->total_para_num = para_num;
 }

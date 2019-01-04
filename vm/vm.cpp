@@ -23,6 +23,7 @@ int stack[maxn];
 int IP, SP, PC, TP;
 
 // other...
+bool finish = false;
 int paraN, display, base, value;
 enum Tag {
 	// opr type
@@ -37,7 +38,7 @@ map<string, int> h;
 void load_code()
 {
 	ifstream infile;
-	infile.open("code.txt");
+	infile.open("vm_code.txt");
 	assert(infile.is_open());
 
 	while (!infile.eof()) {
@@ -49,6 +50,9 @@ void load_code()
 
 void init_envi()
 {
+	// init stack
+	memset(stack, -1, sizeof(stack));
+	stack[2] = stack[3] = 0;
 	// init regs
 	TP = -1; IP = PC = SP = 0;
 	// instr type
@@ -57,13 +61,21 @@ void init_envi()
 	h["PAR"] = PAR;
 	// assitance
 	paraN = 0;
-	// display = SP + 2; --------+++------------
+	display = SP + 4;
+	stack[display] = 0;
 }
 
 void par()
 {
-	paraN++;
-	stack[TP+4+paraN] = A;		// pass value
+	paraN = A;
+	stack[TP + 4] = paraN;				// save PARA NUM
+	// pass value
+	for (int i = 1; i <= A; i++) {
+		stack[TP + 4 + i] = stack[TP - A + i];
+	}
+	
+	//paraN++;
+	//stack[TP+4+paraN] = A;		// pass value
 	//int base = stack[display + L];
 	//int value = stack[base + A];
 	//stack[TP + 4 + paraN] = value;
@@ -74,7 +86,7 @@ void cal()
 	stack[TP + 1] = SP;			// save old SP
 	stack[TP + 2] = PC;			// save RET ADDRESS
 	stack[TP + 3] = display;	// save GLOBAL DISPLAY_BASE
-	stack[TP + 4] = paraN;		// save PARA NUM
+	// stack[TP + 4] = paraN;		// save PARA NUM
 
 	// copy display table
 	int pre_display = display;		
@@ -102,9 +114,10 @@ void lod()
 
 void sto()
 {
-	value = stack[TP--];
+	value = stack[TP];
 	base = stack[display + L];
 	stack[base + A] = value;
+	TP--;
 }
 
 inline void jmp() { PC = A; }
@@ -116,8 +129,9 @@ void opr()
 	switch (A) {
 	case RET:	// func return
 		display = stack[SP + 2];		// recover DISPLAY
-		IP = stack[SP + 1];
-		TP = SP - 1; SP = stack[SP]; paraN = 0;
+		PC = stack[SP + 1];
+		TP = SP - 1; SP = stack[SP];
+		if (SP < 0) finish = true;
 		break;
 	case NOT:
 		stack[TP] = -stack[TP];
@@ -156,9 +170,9 @@ void opr()
 	case LE:
 		stack[TP - 1] = (stack[TP - 1] <= stack[TP]); TP--;
 		break;
-	case WRT: cout << stack[TP--] << endl; break;
+	case WRT: cout << "output:\t" << stack[TP--] << endl; break;
 	case EDL: cout << endl; break;
-	case RED: cin >> stack[++TP]; break;
+	case RED: cout << "input:\t"; cin >> stack[++TP]; break;
 	default: assert(-1);
 	}
 }
@@ -169,7 +183,7 @@ int main()
 	init_envi();
 
 	Code cur;
-	while (true)
+	while (!finish)
 	{
 		cur = code[IP];
 		op = cur.op; L = cur.L; A = cur.A;
@@ -191,6 +205,8 @@ int main()
 		IP = PC;
 	}
 
+	cout << "--- Program Finish! ---\n";
+	system("pause");
 	return 0;
 }
 

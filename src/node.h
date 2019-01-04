@@ -15,6 +15,7 @@ class Node
 public:
 	Node();
 	~Node();
+	static const int basic_size = 4;
 private:
 	int nextquad;
 	vector<Code> code;
@@ -23,9 +24,9 @@ public:
 	void output();
 	int  get_nextquad();
 	void gen(Gen instr);
-	void gen(Gen instr, int x);
+	void gen(Gen instr, int x, int level, int para_num);
 	void gen(Gen instr, Tag op);
-	void gen(Gen instr, Type name_info, int level);
+	void gen(Gen instr, Type name_info, int level, int para_num);
 	void backpatch(int code_pos, int jmp_pos);
 
 };
@@ -84,7 +85,7 @@ inline void Node::gen(Gen instr)
 	}
 }
 
-inline void Node::gen(Gen instr, int x)
+inline void Node::gen(Gen instr, int x, int level = 0, int para_num = 0)
 {
 	switch (instr)
 	{
@@ -92,7 +93,7 @@ inline void Node::gen(Gen instr, int x)
 		emit("LIT", 0, x);
 		break;
 	case Gen::INT:
-		emit("INT", 0, x);
+		emit("INT", 0, x + basic_size + level + 1 + para_num);
 		break;
 	case Gen::PAR:
 		emit("PAR", 0, x);
@@ -150,8 +151,10 @@ inline void Node::gen(Gen instr, Tag op)
 	}
 }
 
-inline void Node::gen(Gen instr, Type name_info, int level)
+inline void Node::gen(Gen instr, Type name_info, int level, int para_num)
 {
+	// offset = _offset + basic_size + [(para_num + 1)] + (level + 1)-->display_table_size
+	int offset;
 	switch (instr)
 	{
 	case Gen::CAL:
@@ -159,19 +162,32 @@ inline void Node::gen(Gen instr, Type name_info, int level)
 		break;
 	case Gen::LOD:
 		if (name_info.get_type() == Tag::VAR_TYPE) {
-			emit("LOD", level, name_info.get_table_info());
+			offset = name_info.get_table_info() + basic_size + (para_num) +(level + 1);
+			emit("LOD", level, offset);							// modifi offset here...
 		}
 		else if (name_info.get_type() == Tag::CONST_TYPE) {
 			emit("LIT", 0, name_info.get_table_info());
 		}
+		else if (name_info.get_type() == Tag::PARA_TYPE) {
+			offset = name_info.get_table_info() + basic_size;
+			emit("LOD", level, offset);
+		}
 		break;
 	case Gen::STO:
-		emit("STO", level, name_info.get_table_info());
+		offset = name_info.get_table_info() + basic_size;
+		if (name_info.get_type() != Tag::PARA_TYPE) {
+			offset = offset + (para_num) + (level + 1);
+		}
+		emit("STO", level, offset);			// modifi offset here...
 		break;
 	case Gen::RED:
-		emit("LOD", level, name_info.get_table_info());
+		offset = name_info.get_table_info() + basic_size;
+		if (name_info.get_type() != Tag::PARA_TYPE) {
+			offset = offset + (para_num) + (level + 1);
+		}
+		// emit("LOD", level, offset);
 		emit("OPR", 0, (int)OPR::RED);
-		emit("STO", level, name_info.get_table_info());
+		emit("STO", level, offset);
 		break;
 	default:
 		break;
